@@ -1,5 +1,5 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# PID Controller
+This is a simple PID controller implementation in C++. The program is for use with the simulator linked below.
 
 ---
 
@@ -19,7 +19,7 @@ Self-Driving Car Engineer Nanodegree Program
   * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -33,60 +33,40 @@ There's an experimental patch for windows in this [PR](https://github.com/udacit
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+4. Run it: `./pid`.
 
-## Editor Settings
+## The PID Components
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The controller computes scalar control commands using an observed scalar error based on the following three additive components:
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+1. The proportional (P) component: Acts proportionally to the observed error value, i.e. the larger the error value, the larger the absolute control command value.
+2. The integral (I) component: Acts using the sum of all past observed errors, i.e. the greater the imbalance between negative and positive past observed errors, the larger the absolute control command value.
+3. The differential (D) component: Acts using the change rate of the error, i.e. the more the error changes between the last and the current time step, the larger the absolute control command value.
 
-## Code Style
+## The PID Coefficients for the steering controller
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+The strength of the influence of each of the three components on the control command value (the steering angle in this case) is determined by its respective coefficient.
 
-## Project Instructions and Rubric
+I tuned the coefficients manually according to the following reasoning and trial and error.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+### Initial coefficient values
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+1. P-coefficient: The cross-track error is measured in meters and the maximum absolute steering value is 1. Using the heuristic that a deviation from the target path by 3 meters (which is a large deviation given the width of a normal lane) should result in a rather strong steering value of 0.6, I used an initial value of 0.2 for this coefficient.
+2. I-coefficient: Since the cross-track error is measured every 0.1 seconds, the integral error can get large very quickly. I started out with a somewhat arbitrary value of 0.0001 for this coefficient.
+3. D-coefficient: The change in the error within 0.1 seconds will be small in most situations, therefore I somewhat arbitrarily chose the initial value to be 10 times the P-coefficient to 2.0.
 
-## Hints!
+### Tuning and final values
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+The initial coefficient values worked sufficiently well, but the car constantly slightly overshot the target path and the car corrected back to the target path to drastically.
 
-## Call for IDE Profiles Pull Requests
+In order to get the car to convert back to the target path more smoothly, I gradually decreased the proportional coefficient.
 
-Help your fellow students!
+In order to reduce the overshooting, I gradually increased the differential coefficient.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+Of course not only the the absolute P- and D-coefficients matter, but also their relation. I ended up with a P-coefficient of 0.08 and a D-coefficient of 2.5, i.e. with the differential component over 30 times larger than the proportional component. Increasing the integral coefficient by a factor of 10 to 0.001 had a minor effect.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+The coefficients chosen above lead to a satisfactorily smooth behavior in the simulator, however, a to-do and next step is to fine-tune the coefficients systematically using an optimization algorithm.
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+## The PID Coefficients for the throttle controller
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+For the throttle controller I used the same initial coefficients as for the steering controller and didn't experiment much with them afterwards. The car seems to accelerate and decelerate in a sensical way.
