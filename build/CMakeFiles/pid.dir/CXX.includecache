@@ -13,6 +13,8 @@ PID.h
 /Users/pierluigiferrari/git/PID_controller/src/PID.h
 
 /Users/pierluigiferrari/git/PID_controller/src/PID.h
+uWS/uWS.h
+-
 
 /Users/pierluigiferrari/git/PID_controller/src/json.hpp
 algorithm
